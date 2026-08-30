@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}CQ-DCC · QueueWise AI{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="/static/js/cqdcc.js" defer></script>
+{% endblock %}
+{% block content %}
+<h1>Campus Queue Digital Command Center</h1>
+<p class="sub">Live operational view of every queue on campus — CQ-DCC.</p>
+
+<div class="grid kpis" id="kpis">
+  <div class="card kpi"><div class="num" id="k-tokens">{{ kpis.tokens_today }}</div><div class="lbl">Tokens Today</div></div>
+  <div class="card kpi"><div class="num" id="k-served">{{ kpis.served_today }}</div><div class="lbl">Served Today</div></div>
+  <div class="card kpi"><div class="num" id="k-waiting">{{ kpis.waiting_now }}</div><div class="lbl">Waiting Now</div></div>
+  <div class="card kpi"><div class="num" id="k-serving">{{ kpis.serving_now }}</div><div class="lbl">Being Served</div></div>
+  <div class="card kpi"><div class="num" id="k-missed">{{ kpis.missed_today }}</div><div class="lbl">Missed Today</div></div>
+  <div class="card kpi"><div class="num" id="k-waitavg">{{ kpis.avg_wait_minutes }}<small> min</small></div><div class="lbl">Avg Wait</div></div>
+  <div class="card kpi"><div class="num" id="k-csat">{{ kpis.csat }}<small> /5</small></div><div class="lbl">CSAT</div></div>
+  <div class="card kpi"><div class="num" id="k-counters">{{ kpis.open_counters }}</div><div class="lbl">Open Counters</div></div>
+</div>
+
+<div class="charts-grid mt">
+  <div class="card"><h2>Queue Volume by Location (all time)</h2>
+    <div class="chart-box"><canvas id="ch-volume"></canvas></div></div>
+  <div class="card"><h2>Peak Hours (7 days)</h2>
+    <div class="chart-box"><canvas id="ch-peak"></canvas></div></div>
+  <div class="card"><h2>Counter Utilization</h2>
+    <div class="chart-box"><canvas id="ch-util"></canvas></div></div>
+  <div class="card"><h2>Satisfaction Trend (CSAT)</h2>
+    <div class="chart-box"><canvas id="ch-csat"></canvas></div></div>
+  <div class="card"><h2>Missed Token Rate</h2>
+    <div class="chart-box"><canvas id="ch-missed"></canvas></div></div>
+  <div class="card">
+    <h2>Live Notification Feed</h2>
+    <table id="notif-feed">
+      {% for n in recent_notifications %}
+      <tr><td class="mono muted">{{ n.created_at.strftime("%H:%M:%S") }}</td>
+          <td><span class="badge {{ n.type }}">{{ n.type }}</span></td>
+          <td style="font-size:.82rem">{{ n.message }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<div class="grid cols-3 mt">
+  <div class="card">
+    <h2>Locations</h2>
+    <table>
+      <tr><th>Name</th><th>Avg svc</th><th>Threshold</th><th>Status</th><th></th></tr>
+      {% for loc in locations %}
+      <tr>
+        <td>{{ loc.name }} <span class="muted mono">({{ loc.code }})</span></td>
+        <td class="mono">{{ loc.avg_service_minutes }}m</td>
+        <td class="mono">{{ loc.overload_threshold }}</td>
+        <td><span class="badge {{ 'open' if loc.is_active else 'closed' }}">
+          {{ 'active' if loc.is_active else 'inactive' }}</span></td>
+        <td>
+          {% if user.role == 'admin' %}
+          <form class="inline" method="post" action="/admin/locations/{{ loc.id }}/toggle">
+            <button class="btn sm ghost" type="submit">Toggle</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Counters</h2>
+    <table>
+      <tr><th>Counter</th><th>Location</th><th>Status</th><th></th></tr>
+      {% for c in counters %}
+      <tr>
+        <td>{{ c.name }}</td>
+        <td>{{ c.location.name }}</td>
+        <td><span class="badge {{ c.status }}">{{ c.status }}</span></td>
+        <td><form class="inline" method="post" action="/admin/counters/{{ c.id }}/status">
+          <input type="hidden" name="status" value="{{ 'closed' if c.status == 'open' else 'open' }}">
+          <button class="btn sm ghost" type="submit">{{ 'Close' if c.status == 'open' else 'Open' }}</button>
+        </form></td>
+      </tr>
+      {% endfor %}
+    </table>
+    <form class="mt row-flex" method="post" action="/admin/counters">
+      <select name="location_id" required>
+        {% for loc in locations %}<option value="{{ loc.id }}">{{ loc.name }}</option>{% endfor %}
+      </select>
+      <input name="name" placeholder="Counter name" required>
+      <button class="btn sm" type="submit">Add counter</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Staff Assignments</h2>
+    <table>
+      <tr><th>Staff</th><th>Email</th><th>Counter</th></tr>
+      {% for s in staff %}
+      <tr><td>{{ s.name }}</td><td class="mono">{{ s.email }}</td>
+          <td>{{ s.counter.name if s.counter else "—" }}</td></tr>
+      {% endfor %}
+    </table>
+    {% if user.role == 'admin' %}
+    <h2 class="mt">Add Location</h2>
+    <form method="post" action="/admin/locations">
+      <div class="field"><label>Name</label><input name="name" required></div>
+      <div class="field"><label>Code (token prefix)</label><input name="code" maxlength="6" required></div>
+      <div class="field"><label>Category</label><input name="category" value="general"></div>
+      <div class="field"><label>Avg service (min)</label><input name="avg_service_minutes" type="number" step="0.5" value="4"></div>
+      <div class="field"><label>Overload threshold</label><input name="overload_threshold" type="number" value="5"></div>
+      <button class="btn sm" type="submit">Add location</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}{% endblock %}

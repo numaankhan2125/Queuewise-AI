@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}My Tokens · QueueWise AI{% endblock %}
+{% block content %}
+<h1>My Tokens</h1>
+<p class="sub">Complete auditable history of every virtual token you have taken.</p>
+
+<div class="card">
+  <table>
+    <tr><th>Token</th><th>Location</th><th>Counter</th><th>Status</th>
+        <th>Est. wait</th><th>Issued</th><th></th></tr>
+    {% for t in tokens %}
+    <tr>
+      <td class="mono"><b>{{ t.code }}</b>{% if t.rejoined_from_token %} <span class="muted">(rejoined)</span>{% endif %}</td>
+      <td>{{ t.location.name }}</td>
+      <td>{{ t.counter.name }}</td>
+      <td><span class="badge {{ t.status }}">{{ t.status }}</span></td>
+      <td class="mono">{{ t.est_wait_minutes }} min</td>
+      <td class="mono">{{ t.issued_at.strftime("%d %b %H:%M") }}</td>
+      <td>
+        <a class="btn sm ghost" href="/tokens/{{ t.id }}">View</a>
+      </td>
+    </tr>
+    {% endfor %}
+    {% if not tokens %}<tr><td colspan="7" class="muted">No tokens yet — book one from the portal.</td></tr>{% endif %}
+  </table>
+</div>
+{% endblock %}

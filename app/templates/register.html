@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Register · QueueWise AI{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card">
+    <h1>Create student account</h1>
+    <p class="sub">Book virtual tokens from anywhere on campus.</p>
+    {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+    <form method="post" action="/register">
+      <div class="field"><label>Name</label>
+        <input name="name" required></div>
+      <div class="field"><label>Email</label>
+        <input name="email" type="email" required></div>
+      <div class="field"><label>Roll number (optional)</label>
+        <input name="roll_no"></div>
+      <div class="field"><label>Password (min 6 chars)</label>
+        <input name="password" type="password" required minlength="6"></div>
+      <button class="btn" type="submit" style="width:100%">Register</button>
+    </form>
+    <p class="sub mt" style="text-align:center"><a href="/login">Back to login</a></p>
+  </div>
+</div>
+{% endblock %}

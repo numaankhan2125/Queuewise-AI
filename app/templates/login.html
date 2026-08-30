@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Login · QueueWise AI{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card">
+    <h1>Welcome back</h1>
+    <p class="sub">Sign in to QueueWise AI — Smart Queue Management</p>
+    {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+    <form method="post" action="/login">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required>
+      </div>
+      <button class="btn" type="submit" style="width:100%">Login</button>
+    </form>
+    <p class="sub mt" style="text-align:center">
+      New student? <a href="/register">Create an account</a>
+    </p>
+  </div>
+
+  <div class="card mt">
+    <h2 style="font-size:.95rem">Demo accounts (after seeding)</h2>
+    <table>
+      <tr><th>Role</th><th>Email</th><th>Password</th></tr>
+      <tr><td>Student</td><td class="mono">priya@student.edu</td><td>student123</td></tr>
+      <tr><td>Staff</td><td class="mono">ravi.staff@queuewise.ai</td><td>staff123</td></tr>
+      <tr><td>Supervisor</td><td class="mono">meena.sup@queuewise.ai</td><td>super123</td></tr>
+      <tr><td>Admin</td><td class="mono">admin@queuewise.ai</td><td>admin123</td></tr>
+    </table>
+  </div>
+</div>
+{% endblock %}

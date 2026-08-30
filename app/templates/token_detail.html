@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ token.code }} · QueueWise AI{% endblock %}
+{% block head %}<script src="/static/js/token.js" defer></script>{% endblock %}
+{% block body_attrs %}data-location-id="{{ token.location_id }}"{% endblock %}
+{% block content %}
+<div class="card token-hero">
+  <p class="sub">{{ token.location.name }} · {{ token.counter.name }}</p>
+  <div class="token-code" id="token-code">{{ token.code }}</div>
+  <span class="badge {{ token.status }}" id="token-status">{{ token.status }}</span>
+
+  {% if token.status == 'waiting' %}
+  <div class="position-ring">
+    <span class="p" id="token-position">{{ position }}</span>
+    <span>in queue</span>
+  </div>
+  {% elif token.status in ('called', 'serving') %}
+  <div class="position-ring pulse" style="border-color: var(--ok); color: var(--ok);">
+    <span>GO TO</span><span>{{ token.counter.name }}</span>
+  </div>
+  {% endif %}
+
+  {% if token.status == 'called' and token.grace_expires_at %}
+  <p id="grace-line">Grace period ends at
+    <b class="mono" data-grace="{{ token.grace_expires_at }}Z">{{ token.grace_expires_at.strftime("%H:%M:%S") }}</b></p>
+  {% endif %}
+</div>
+
+<div class="grid cols-3 mt">
+  <div class="card">
+    <h2>Transparent Estimate</h2>
+    <table>
+      <tr><th>Queue length (at booking)</th><td class="mono">{{ estimate.queue_length }}</td></tr>
+      <tr><th>Avg service time</th><td class="mono">{{ estimate.avg_service_time_min }} min</td></tr>
+      <tr><th>Predicted wait</th><td class="mono"><b>{{ estimate.estimated_wait_minutes }} min</b></td></tr>
+      <tr><th>Formula</th><td class="mono">{{ estimate.queue_length }} × {{ "%.1f"|format(estimate.avg_service_time_min) }}</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Live Location Tracking</h2>
+    {% if token.status in ('waiting', 'called', 'serving') %}
+    <div class="row-flex">
+      <p class="small muted">Track {{ token.location.name }} crowd live —
+        turn on to watch traffic while you wait.</p>
+      <button id="track-toggle" class="btn sm" type="button">Turn ON tracking</button>
+    </div>
+    <div id="tracking-panel" class="mt hidden">
+      <div class="bar">
+        <div class="bar-fill low" style="width:0%"></div>
+      </div>
+      <table class="mono mt small-table">
+        <tr><td>Traffic level</td><td><span class="traffic-badge low" data-t-level>—</span></td></tr>
+        <tr><td>Students waiting</td><td data-t-waiting>—</td></tr>
+        <tr><td>Being served</td><td data-t-serving>—</td></tr>
+        <tr><td>Now serving at counter</td><td data-t-now>—</td></tr>
+        <tr><td>Your position</td><td data-t-pos>{{ position or "—" }}</td></tr>
+        <tr><td>Location est. wait</td><td data-t-est>—</td></tr>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted">Tracking is available while your token is active.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Journey Timeline</h2>
+    <table>
+      <tr><td>Issued</td><td class="mono">{{ token.issued_at.strftime("%d %b %H:%M:%S") }}</td></tr>
+      <tr><td>Called</td><td class="mono">{{ token.called_at.strftime("%H:%M:%S") if token.called_at else "—" }}</td></tr>
+      <tr><td>Served</td><td class="mono">{{ token.served_at.strftime("%H:%M:%S") if token.served_at else "—" }}</td></tr>
+      <tr><td>Completed</td><td class="mono">{{ token.completed_at.strftime("%H:%M:%S") if token.completed_at else "—" }}</td></tr>
+      {% if token.missed_at %}<tr><td>Missed</td><td class="mono">{{ token.missed_at.strftime("%H:%M:%S") }}</td></tr>{% endif %}
+      {% if token.rejoined_from_token %}<tr><td>Rejoined from</td><td class="mono">#{{ token.rejoined_from_token }}</td></tr>{% endif %}
+    </table>
+    {% if user.role == 'student' and token.status in ('waiting', 'called') %}
+    <form class="mt" method="post" action="/tokens/{{ token.id }}/cancel"
+          onsubmit="return confirm('Cancel this token?');">
+      <button class="btn bad sm" type="submit">Cancel token</button>
+    </form>
+    {% endif %}
+    {% if user.role == 'student' and token.status == 'missed' %}
+    <form class="mt" method="post" action="/tokens/{{ token.id }}/rejoin">
+      <button class="btn warn sm" type="submit">Rejoin queue</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Notifications</h2>
+    {% for n in notifications %}
+    <p style="font-size:.85rem"><span class="badge {{ n.type }}">{{ n.type }}</span>
+      {{ n.message }}</p>
+    <hr style="border:none;border-top:1px solid var(--line)">
+    {% endfor %}
+    {% if not notifications %}<p class="muted">No notifications yet.</p>{% endif %}
+  </div>
+</div>
+
+{% if user.role == 'student' and token.status == 'completed' and not feedback %}
+<div class="card mt">
+  <h2>Rate your experience</h2>
+  <form method="post" action="/tokens/{{ token.id }}/feedback">
+    <div class="field">
+      <label>Rating (CSAT)</label>
+      <select name="rating" required>
+        <option value="5">★★★★★ Excellent</option>
+        <option value="4">★★★★ Good</option>
+        <option value="3">★★★ Average</option>
+        <option value="2">★★ Poor</option>
+        <option value="1">★ Very poor</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Comment (optional)</label>
+      <textarea name="comment" rows="2"></textarea>
+    </div>
+    <button class="btn ok" type="submit">Submit feedback</button>
+  </form>
+</div>
+{% elif feedback %}
+<div class="card mt">
+  <h2>Your feedback</h2>
+  <p>{{ "★" * feedback.rating }}{{ "☆" * (5 - feedback.rating) }}
+     <span class="muted">— {{ feedback.comment or "no comment" }}</span></p>
+</div>
+{% endif %}
+{% endblock %}

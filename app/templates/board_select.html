@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Display Board · QueueWise AI{% endblock %}
+{% block content %}
+<h1>Display Board</h1>
+<p class="sub">Open the live NOW-SERVING screen for any location — perfect for lobby TVs.</p>
+<div class="grid cols-3">
+  {% for loc in locations %}
+  <div class="card">
+    <h2>{{ loc.name }}</h2>
+    <p class="muted">{{ loc.category }} · {{ loc.operating_hours }}</p>
+    <a class="btn mt" href="/board/{{ loc.id }}">Open board</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

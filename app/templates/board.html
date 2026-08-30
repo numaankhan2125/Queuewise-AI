@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOW SERVING · {{ location.name }}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/common.js"></script>
+</head>
+<body style="background:#101a30; color:#fff">
+<header class="topbar" style="background:#0b1222">
+  <span class="brand"><span class="brand-mark">QW</span> {{ location.name }} — Live Queue</span>
+  <nav><a href="/board">← All boards</a></nav>
+</header>
+
+<main class="page" id="board-main"
+      data-location-id="{{ location.id }}">
+  <div class="grid cols-3">
+    {% for r in rows %}
+    <div class="card board-card">
+      <p class="counter-name">{{ r.counter.name }}
+        <span class="badge {{ 'open' if r.counter.status == 'open' else 'closed' }}">{{ r.counter.status }}</span></p>
+      {% if r.now_serving != '-' %}
+        <p class="muted mt">{{ 'SERVING' if r.state == 'serving' else 'CALLED · grace running' }}</p>
+      {% endif %}
+      <div class="now-serving" data-now-serving="{{ r.counter.id }}">{{ r.now_serving }}</div>
+      <table class="mt mono" style="text-align:left">
+        <tr><td>Next up</td><td data-next-up="{{ r.counter.id }}">{{ r.next_up }}</td></tr>
+        <tr><td>Waiting</td><td data-waiting="{{ r.counter.id }}">{{ r.waiting }}</td></tr>
+      </table>
+    </div>
+    {% endfor %}
+    {% if not rows %}<p class="muted">No counters configured for this location.</p>{% endif %}
+  </div>
+</main>
+
+<script>
+(function () {
+  const lid = document.getElementById("board-main").dataset.locationId;
+  subscribe([`display:${lid}`, `location:${lid}`], {
+    token_update: (msg) => setTimeout(() => location.reload(), 800),
+    counter_update: (msg) => setTimeout(() => location.reload(), 800),
+  });
+})();
+</script>
+</body>
+</html>

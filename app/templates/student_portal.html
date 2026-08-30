@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Student Portal · QueueWise AI{% endblock %}
+{% block content %}
+<h1>Live Campus Queues</h1>
+<p class="sub">Check before you go — book a token and walk in when it's your turn.</p>
+
+{% if active_tokens %}
+<h2 class="mt">Your Active Tokens</h2>
+<div class="grid cols-3 mt">
+  {% for item in active_tokens %}
+  <div class="card">
+    <div class="row-flex">
+      <h2>{{ item.token.code }}</h2>
+      <span class="badge {{ item.token.status }}">{{ item.token.status }}</span>
+    </div>
+    <p class="muted">{{ item.token.location.name }}</p>
+    <p class="mt">Queue position: <b>#{{ item.position }}</b> ·
+       Est. wait <b>{{ item.token.est_wait_minutes }} min</b></p>
+    <a class="btn sm mt" href="/tokens/{{ item.token.id }}">Track live</a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="grid cols-3 mt" id="queue-cards">
+  {% for t in cards %}
+  <div class="card" data-location-card="{{ t.location_id }}">
+    <div class="row-flex">
+      <h2>{{ t.name }}</h2>
+      <span class="traffic-badge {{ t.traffic_key }}" data-level>{{ t.traffic_label }}</span>
+    </div>
+    <p class="muted">{{ t.category }} · {{ t.operating_hours }} ·
+      {{ t.open_counters }}/{{ t.total_counters }} counters</p>
+
+    <div class="bar mt">
+      <div class="bar-fill {{ t.traffic_key }}" style="width: {{ t.load_pct }}%"></div>
+    </div>
+
+    <table class="mt mono">
+      <tr><th>Waiting</th><th>Now serving</th><th>Est. wait</th></tr>
+      <tr class="mono">
+        <td data-waiting>{{ t.waiting }}</td>
+        <td data-now-serving>{{ t.now_serving or "—" }}</td>
+        <td data-estwait>{{ t.est_wait_minutes }} min</td>
+      </tr>
+    </table>
+    <p class="small muted" data-suggestion>{{ t.suggestion }}</p>
+
+    <form method="post" action="/portal/book" class="mt"
+          onsubmit="this.querySelector('button').disabled=true; return true;">
+      <input type="hidden" name="location_id" value="{{ t.location_id }}">
+      <div class="field">
+        <label>Service</label>
+        <select name="service_type">
+          {% for key, label in service_types.items() %}
+          <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn" type="submit">Get Virtual Token</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="/static/js/portal.js" defer></script>{% endblock %}

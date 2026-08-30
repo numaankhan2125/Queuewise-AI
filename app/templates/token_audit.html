@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Token Audit · QueueWise AI{% endblock %}
+{% block content %}
+<h1>Token Audit Trail</h1>
+<p class="sub">Every token's full lifecycle — issued, called, served, missed, completed — auditable forever.</p>
+
+<form method="get" action="/admin/tokens" class="row-flex mb">
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for s in ['waiting','called','serving','completed','missed','cancelled'] %}
+    <option value="{{ s }}" {{ 'selected' if status_filter == s }}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn sm" type="submit">Filter</button>
+</form>
+
+<div class="card" style="overflow-x:auto">
+  <table>
+    <tr><th>Code</th><th>Student</th><th>Location</th><th>Counter</th>
+        <th>Status</th><th>Est/Actual wait</th><th>Svc time</th><th>Issued</th></tr>
+    {% for t in tokens %}
+    <tr>
+      <td class="mono"><b>{{ t.code }}</b>{% if t.rejoined_from_token %} <span class="muted">(R)</span>{% endif %}</td>
+      <td>{{ t.student.name }}</td>
+      <td>{{ t.location.name }}</td>
+      <td>{{ t.counter.name }}</td>
+      <td><span class="badge {{ t.status }}">{{ t.status }}</span></td>
+      <td class="mono">{{ t.est_wait_minutes }} / {{ "%.1f"|format(t.wait_minutes_actual) if t.wait_minutes_actual is not none else "—" }} min</td>
+      <td class="mono">{{ "%.1f"|format(t.service_minutes_actual) if t.service_minutes_actual is not none else "—" }} min</td>
+      <td class="mono">{{ t.issued_at.strftime("%d %b %H:%M") }}</td>
+    </tr>
+    {% endfor %}
+    {% if not tokens %}<tr><td colspan="8" class="muted">No tokens found.</td></tr>{% endif %}
+  </table>
+</div>
+{% endblock %}

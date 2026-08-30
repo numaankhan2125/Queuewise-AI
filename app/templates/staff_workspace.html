@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Staff Workspace · QueueWise AI{% endblock %}
+{% block head %}<script src="/static/js/workspace.js" defer></script>{% endblock %}
+{% block body_attrs %}data-counter-id="{{ counter.id }}" data-location-id="{{ counter.location_id }}"{% endblock %}
+{% block content %}
+<div class="row-flex">
+  <div>
+    <h1>{{ counter.name }} — {{ counter.location.name }}</h1>
+    <p class="sub">Counter Staff Workspace · status:
+      <span class="badge {{ counter.status }}" id="counter-status">{{ counter.status }}</span></p>
+  </div>
+  <form method="post" action="/workspace/toggle-counter">
+    <input type="hidden" name="status" value="{{ 'closed' if counter.status == 'open' else 'open' }}">
+    <button class="btn ghost sm" type="submit">
+      {{ 'Close counter' if counter.status == 'open' else 'Open counter' }}
+    </button>
+  </form>
+</div>
+
+<div class="card board-card">
+  {% if current %}
+    <p class="counter-name">NOW SERVING</p>
+    <div class="now-serving" id="now-serving">{{ current.code }}</div>
+    <span class="badge {{ current.status }}">{{ current.status }}</span>
+    <div class="mt row-flex" style="justify-content:center; gap:.6rem;">
+      {% if current.status == 'called' %}
+      <form class="inline" method="post" action="/tokens/{{ current.id }}/start">
+        <button class="btn ok" type="submit">Start Service</button>
+      </form>
+      <form class="inline" method="post" action="/tokens/{{ current.id }}/no-show"
+            onsubmit="return confirm('Mark as no-show and call next?');">
+        <button class="btn warn" type="submit">No-show</button>
+      </form>
+      {% elif current.status == 'serving' %}
+      <form class="inline" method="post" action="/tokens/{{ current.id }}/complete">
+        <button class="btn ok" type="submit">Complete Service</button>
+      </form>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="counter-name">No token being served</p>
+    <div class="now-serving muted" id="now-serving">— — —</div>
+  {% endif %}
+</div>
+
+<div class="grid cols-3 mt">
+  <div class="card">
+    <h2>Waiting Queue ({{ queue|length }})</h2>
+    <table id="queue-table">
+      <tr><th>#</th><th>Token</th><th>Service</th><th>Issued</th></tr>
+      {% for t in queue %}
+      <tr data-token-row="{{ t.id }}">
+        <td class="mono">{{ loop.index }}</td>
+        <td class="mono"><b>{{ t.code }}</b></td>
+        <td>{{ t.service_type }}</td>
+        <td class="mono">{{ t.issued_at.strftime("%H:%M") }}</td>
+      </tr>
+      {% endfor %}
+      {% if not queue %}<tr><td colspan="4" class="muted">Queue is empty.</td></tr>{% endif %}
+    </table>
+    <form class="mt" method="post" action="/workspace/call-next"
+          onsubmit="this.querySelector('button').disabled=true; return true;">
+      <button class="btn" type="submit" style="width:100%">📢 Call Next Token</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Counter Load</h2>
+    <p>Active load: <b class="mono">{{ load }}</b></p>
+    <p class="muted">Tokens auto-reroute to the least-loaded counter when
+      this one crosses the location's overload threshold.</p>
+  </div>
+
+  <div class="card">
+    <h2>Recently Closed</h2>
+    <table>
+      <tr><th>Token</th><th>Status</th></tr>
+      {% for t in recent %}
+      <tr>
+        <td class="mono">{{ t.code }}</td>
+        <td><span class="badge {{ t.status }}">{{ t.status }}</span></td>
+      </tr>
+      {% endfor %}
+      {% if not recent %}<tr><td colspan="2" class="muted">Nothing yet.</td></tr>{% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

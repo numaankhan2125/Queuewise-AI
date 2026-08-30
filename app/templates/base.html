@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}QueueWise AI{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/common.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body data-user-id="{{ user.id if user else '' }}" {% block body_attrs %}{% endblock %}>
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark">QW</span> QueueWise <span class="brand-sub">AI</span>
+  </a>
+  <nav class="nav">
+    {% if user %}
+      {% if user.role == 'student' %}
+        <a href="/portal">Live Queues</a>
+        <a href="/my-tokens">My Tokens</a>
+      {% elif user.role == 'staff' %}
+        <a href="/workspace">My Workspace</a>
+      {% else %}
+        <a href="/cqdcc">CQ-DCC</a>
+        <a href="/admin/tokens">Token Audit</a>
+      {% endif %}
+      <a href="/board">Display Board</a>
+      <a href="/traffic">Traffic</a>
+      <span class="user-chip">{{ user.name }} · <em>{{ user.role }}</em></span>
+      <a class="btn btn-ghost btn-sm" href="/logout">Logout</a>
+    {% endif %}
+  </nav>
+</header>
+
+<main class="page">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  QueueWise AI — Smart Queue Management &amp; Virtual Token System · Team SYNTRIX · HackNow India-2026
+</footer>
+
+<div id="toast-stack"></div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

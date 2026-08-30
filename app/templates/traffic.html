@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Campus Traffic · QueueWise AI{% endblock %}
+{% block head %}<script src="/static/js/traffic.js" defer></script>{% endblock %}
+{% block content %}
+<div class="row-flex">
+  <div>
+    <h1>Campus Traffic Board</h1>
+    <p class="sub">Live crowd level at every service point — check here <b>before</b> you take a token.</p>
+  </div>
+  <span class="muted mono" id="updated-at">updated {{ updated_at.strftime("%H:%M:%S") }}</span>
+</div>
+
+<div class="grid cols-3" id="traffic-grid">
+  {% for t in traffic %}
+  <div class="card traffic-card" data-traffic-card="{{ t.location_id }}">
+    <div class="row-flex">
+      <h2>{{ t.name }}</h2>
+      <span class="traffic-badge {{ t.traffic_key }}" data-level>{{ t.traffic_label }}</span>
+    </div>
+    <p class="muted">{{ t.category }} · {{ t.operating_hours }}</p>
+
+    <div class="bar mt">
+      <div class="bar-fill {{ t.traffic_key }}" style="width: {{ t.load_pct }}%"></div>
+    </div>
+    <p class="muted small">{{ t.waiting }}/{{ t.capacity }} capacity
+       · {{ t.open_counters }}/{{ t.total_counters }} counters open</p>
+
+    <table class="mt mono">
+      <tr><td>Waiting now</td><td><b data-waiting>{{ t.waiting }}</b></td></tr>
+      <tr><td>Now serving</td><td data-now-serving>{{ t.now_serving or "—" }}</td></tr>
+      <tr><td>Est. wait</td><td data-estwait>{{ t.est_wait_minutes }} min</td></tr>
+    </table>
+
+    <p class="small mt" data-suggestion>{{ t.suggestion }}</p>
+
+    {% if user and user.role == 'student' %}
+    <form method="post" action="/portal/book" class="mt"
+          onsubmit="this.querySelector('button').disabled=true; return true;">
+      <input type="hidden" name="location_id" value="{{ t.location_id }}">
+      <input type="hidden" name="service_type" value="general">
+      <button class="btn sm" type="submit">Take Token @ {{ t.code }}</button>
+    </form>
+    {% elif not user %}
+    <a class="btn sm ghost mt" href="/login">Login to take a token</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% if not traffic %}<p class="muted">No active locations configured.</p>{% endif %}
+</div>
+
+<div class="card mt">
+  <h2>Legend</h2>
+  <p class="small">
+    <span class="traffic-badge low">Low</span> under 40% of counter capacity ·
+    <span class="traffic-badge moderate">Moderate</span> 40–80% ·
+    <span class="traffic-badge high">High</span> 80–120% ·
+    <span class="traffic-badge packed">Very High</span> above capacity — expect long waits.
+  </p>
+</div>
+{% endblock %}
