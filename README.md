@@ -185,6 +185,5 @@ MIT — free to use, modify, and showcase on your résumé.
 
 ## 🙌 Credits
 
-Built by **Team SYNTRIX** for **LTM HackNow India-2026**  
 Concept: *Smart Queue Management & Virtual Token System*  
 Python implementation: full-stack FastAPI + SQLite + WebSockets
